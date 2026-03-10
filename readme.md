@@ -34,44 +34,103 @@ The Movie Ratings & Recommendation System project aims to analyze user ratings o
 With the increasing number of movies and streaming platforms, users often struggle to discover content that suits their preferences. Manual selection can be time-consuming and inefficient. This project addresses the challenge by analyzing historical movie ratings and providing personalized recommendations, enhancing user experience and engagement.
 
 
+## 4. Dataset Information
+**Source:** [MovieLens 1M](https://grouplens.org/datasets/movielens/)  
 
-## 4. Project Objectives
-- To collect or simulate a dataset of movie ratings and user interactions  
-- To analyze user preferences and trends in movie ratings  
-- To develop a recommendation system using machine learning techniques  
-- To evaluate the performance of the recommendation model  
-- To document insights and potential improvements for real-world application
+**Description:**
+- ~1,000,000 movie ratings from real users  
+- Contains information about users, movies, and ratings  
 
+**Dataset structure:**
+| Column | Description |
+|--------|-------------|
+| user_id | Unique user identifier |
+| movie_id | Unique movie identifier |
+| rating | Rating value (1–5) |
+| timestamp | When rating was given |
+| movie_title | Movie title |
+| genres | Movie genres |
 
+---
 
-## 5. Dataset Information
-- **Source:** Public movie ratings datasets (e.g., MovieLens) or simulated dataset  
-- **Content:** User IDs, Movie IDs, Ratings (1–5), Genres, Timestamps  
-- **Size:** Approximately 1000–5000 records (for academic purposes)  
-- **Usage:** Data will be used for analysis, visualization, and building recommendation models
+## 5. Project Objectives
+1. Load and prepare the dataset  
+2. Perform exploratory data analysis (EDA)  
+3. Build a recommendation model (SVD)  
+4. Evaluate model performance using RMSE  
+5. Generate movie recommendations for users  
 
+---
 
+## 6. Full Python Code
+```python
+# ================================
+# Movie Ratings & Recommendation System
+# Full Python Script
+# ================================
 
-## 6. Data Preparation
-- Data cleaning: remove duplicates, handle missing values  
-- Feature extraction: transform categorical data (genres) into suitable format  
-- Aggregation: calculate average ratings, frequency of interactions  
-- Splitting: separate data into training and testing sets for ML models
+import pandas as pd
+from surprise import Dataset, Reader, SVD
+from surprise.model_selection import train_test_split
+from surprise.accuracy import rmse
 
+# ================================
+# Step 1: Load datasets
+# ================================
+ratings = pd.read_csv('ratings.dat', sep='::', engine='python',
+                      names=['user_id','movie_id','rating','timestamp'])
+movies = pd.read_csv('movies.dat', sep='::', engine='python',
+                     names=['movie_id','movie_title','genres'])
+data = pd.merge(ratings, movies, on='movie_id')
+print("Merged Data Preview:")
+print(data.head())
 
+# ================================
+# Step 2: Exploratory Data Analysis
+# ================================
+print("\nRating Statistics:")
+print(data['rating'].describe())
 
-## 7. Data Analysis Tasks
-- Descriptive statistics: distribution of ratings, top-rated movies  
-- User behavior analysis: average ratings per user, active users  
-- Genre analysis: popular genres, trends over time  
-- Correlation analysis: similarity between users and movies  
+print("\nTop Genres:")
+print(data['genres'].value_counts().head())
 
+ratings_per_movie = data.groupby('movie_title')['rating'].count().sort_values(ascending=False)
+print("\nTop 5 movies by number of ratings:")
+print(ratings_per_movie.head())
 
+# ================================
+# Step 3: Prepare data for Surprise
+# ================================
+reader = Reader(rating_scale=(1,5))
+dataset = Dataset.load_from_df(data[['user_id','movie_id','rating']], reader)
+trainset, testset = train_test_split(dataset, test_size=0.2, random_state=42)
 
-## 8. Key Findings and Insights
-*(To be filled after data analysis)*
-- Example: Most popular genres, top-rated movies, clusters of similar users, patterns in user ratings
+# ================================
+# Step 4: Train SVD model
+# ================================
+algo = SVD()
+algo.fit(trainset)
+predictions = algo.test(testset)
+print("\nRMSE on test set:")
+rmse(predictions)
 
+# ================================
+# Step 5: Generate recommendations for a user
+# ================================
+user_id = 1  # Example user
+user_movies = data[data['user_id'] == user_id]['movie_id'].tolist()
+all_movies = data['movie_id'].unique()
+predictions_list = []
+
+for movie in all_movies:
+    if movie not in user_movies:
+        pred = algo.predict(user_id, movie)
+        predictions_list.append((movie, pred.est))
+
+top_5 = sorted(predictions_list, key=lambda x: x[1], reverse=True)[:5]
+recommended_movies = [movies[movies['movie_id']==m[0]]['movie_title'].values[0] for m in top_5]
+print("\nTop 5 movie recommendations for user 1:")
+print(recommended_movies)
 
 
 ## 9. Project Timeline
@@ -100,12 +159,10 @@ This project demonstrates the application of data analytics and machine learning
 
 
 ## 12. References
-- MovieLens Dataset: https://grouplens.org/datasets/movielens/  
+
 - Python Libraries: pandas, numpy, scikit-learn, matplotlib, seaborn  
 - Academic materials and lecture notes on Data Analytics & ML
 
 
 
-## 13. Appendix
-- Code snippets for data cleaning and model implementation (to be added)  
-- Example visualizations of ratings distributions and recommendations
+
