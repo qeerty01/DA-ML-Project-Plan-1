@@ -14,12 +14,12 @@ Movie Ratings & Recommendation System
 
 
 
-## 1. Project Overview
+# 1. Project Overview
 The Movie Ratings & Recommendation System project aims to analyze user ratings of movies to uncover trends, preferences, and patterns in viewing behavior. The goal is to design a system that can provide personalized movie recommendations based on past ratings and user similarities. The project focuses on data analysis and machine learning techniques to derive actionable insights from a movie ratings dataset.
 
 
 
-## 2. Team Members & Roles
+# 2. Team Members & Roles
 
 | Name & Surname | Student ID | Role | Responsibilities |
 |---------------|-----------|------|------------------|
@@ -30,11 +30,11 @@ The Movie Ratings & Recommendation System project aims to analyze user ratings o
 
 
 
-## 3. Problem Statement
+# 3. Problem Statement
 With the increasing number of movies and streaming platforms, users often struggle to discover content that suits their preferences. Manual selection can be time-consuming and inefficient. This project addresses the challenge by analyzing historical movie ratings and providing personalized recommendations, enhancing user experience and engagement.
 
 
-## 4. Dataset Information
+# 4. Dataset Information
 **Source:** [MovieLens 1M](https://grouplens.org/datasets/movielens/)  
 
 **Description:**
@@ -53,7 +53,7 @@ With the increasing number of movies and streaming platforms, users often strugg
 
 ---
 
-## 5. Project Objectives
+# 5. Project Objectives
 1. Load and prepare the dataset  
 2. Perform exploratory data analysis (EDA)  
 3. Build a recommendation model (SVD)  
@@ -62,78 +62,161 @@ With the increasing number of movies and streaming platforms, users often strugg
 
 ---
 
-## 6. Full Python Code
+# 6. Data Preparation
+
+## Importing Libraries
 ```python
-# ================================
-# Movie Ratings & Recommendation System
-# Full Python Script
-# ================================
-
 import pandas as pd
-from surprise import Dataset, Reader, SVD
-from surprise.model_selection import train_test_split
-from surprise.accuracy import rmse
+import numpy as np
+from sklearn.model_selection import train_test_split
+```
+---
 
-# ================================
-# Step 1: Load datasets
-# ================================
-ratings = pd.read_csv('ratings.dat', sep='::', engine='python',
-                      names=['user_id','movie_id','rating','timestamp'])
-movies = pd.read_csv('movies.dat', sep='::', engine='python',
-                     names=['movie_id','movie_title','genres'])
-data = pd.merge(ratings, movies, on='movie_id')
-print("Merged Data Preview:")
-print(data.head())
+## Loading the Dataset
 
-# ================================
-# Step 2: Exploratory Data Analysis
-# ================================
-print("\nRating Statistics:")
-print(data['rating'].describe())
+ ### remove duplicate rows
+ ```python
+data = data.drop_duplicates()
+```
 
-print("\nTop Genres:")
-print(data['genres'].value_counts().head())
+### check missing values
+```python
+print(data.isnull().sum())
+```
 
-ratings_per_movie = data.groupby('movie_title')['rating'].count().sort_values(ascending=False)
-print("\nTop 5 movies by number of ratings:")
-print(ratings_per_movie.head())
+### remove missing values
+ ```python
+data = data.dropna()
+```
+## Feature Extraction
 
-# ================================
-# Step 3: Prepare data for Surprise
-# ================================
-reader = Reader(rating_scale=(1,5))
-dataset = Dataset.load_from_df(data[['user_id','movie_id','rating']], reader)
-trainset, testset = train_test_split(dataset, test_size=0.2, random_state=42)
+```python
+# convert genres into numeric features
+genres_encoded = data["genres"].str.get_dummies(sep="|")
 
-# ================================
-# Step 4: Train SVD model
-# ================================
-algo = SVD()
-algo.fit(trainset)
-predictions = algo.test(testset)
-print("\nRMSE on test set:")
-rmse(predictions)
+# add encoded genres to dataset
+data = pd.concat([data, genres_encoded], axis=1)
 
-# ================================
-# Step 5: Generate recommendations for a user
-# ================================
-user_id = 1  # Example user
-user_movies = data[data['user_id'] == user_id]['movie_id'].tolist()
-all_movies = data['movie_id'].unique()
-predictions_list = []
+data.head()
+```
 
-for movie in all_movies:
-    if movie not in user_movies:
-        pred = algo.predict(user_id, movie)
-        predictions_list.append((movie, pred.est))
+## Aggregation
+```python
+# average rating per movie
+avg_movie_rating = data.groupby("title")["rating"].mean()
 
-top_5 = sorted(predictions_list, key=lambda x: x[1], reverse=True)[:5]
-recommended_movies = [movies[movies['movie_id']==m[0]]['movie_title'].values[0] for m in top_5]
-print("\nTop 5 movie recommendations for user 1:")
-print(recommended_movies)
+# number of ratings per movie
+rating_count = data.groupby("title")["rating"].count()
 
+movie_stats = pd.DataFrame({
+    "average_rating": avg_movie_rating,
+    "rating_count": rating_count
+})
 
-## 9. Project Timeline
+movie_stats.head()
+```
+## Splitting Data
+```python
+X = data[["user_id","movie_id"]]
+y = data["rating"]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+print("Train size:", len(X_train))
+print("Test size:", len(X_test))
+```
+---
+
+# 7. Data Analysis Tasks
+
+## Descriptive Statistics
+```python
+# rating distribution
+rating_distribution = data["rating"].value_counts().sort_index()
+
+# top rated movies
+top_rated_movies = movie_stats.sort_values(
+    by="average_rating",
+    ascending=False
+).head(10)
+
+print(rating_distribution)
+print(top_rated_movies)
+```
+
+## User Behavior Analysis
+```python
+# average rating per user
+user_avg_rating = data.groupby("user_id")["rating"].mean()
+
+# most active users
+active_users = data.groupby("user_id")["rating"].count().sort_values(
+    ascending=False
+)
+
+print(user_avg_rating.head())
+print(active_users.head(10))
+```
+## Genre Analysis
+```python
+genre_columns = genres_encoded.columns
+
+genre_popularity = data[genre_columns].sum().sort_values(
+    ascending=False
+)
+
+print(genre_popularity.head(10))
+```
+## Correlation Analysis
+```python
+# user-movie matrix
+user_movie_matrix = data.pivot_table(
+    index="user_id",
+    columns="title",
+    values="rating"
+)
+
+# movie correlations
+movie_correlations = user_movie_matrix.corr()
+
+movie_correlations.head()
+```
+---
+
+# 8. Key Findings and Insights
+
+Based on the exploratory data analysis of the MovieLens 1M dataset, several important insights were identified.
+
+### Popular Genres
+The most frequently watched genres include **Drama, Comedy, and Action**. These genres appear in a large proportion of the movies and receive a high number of user ratings, indicating strong audience interest.
+
+### Rating Distribution
+Most user ratings fall between **3 and 4 stars**, suggesting that users tend to rate movies positively but still distinguish between average and highly enjoyable films.
+
+### Top-Rated Movies
+Movies with a high average rating typically have **both strong ratings and a sufficient number of user reviews**. This indicates that highly rated movies are not only liked by a few users but appreciated by a broader audience.
+
+### User Activity Patterns
+User activity varies significantly:
+- Some users rate only a few movies.
+- A smaller group of highly active users contributes a large portion of the ratings.
+
+This pattern is common in recommender system datasets and highlights the importance of identifying active users when building recommendation models.
+
+### Movie Popularity
+A small subset of movies receives the majority of ratings. These movies are considered **popular titles** and often belong to well-known genres or franchises.
+
+### User–Movie Interaction Patterns
+The analysis shows that user preferences tend to cluster around certain genres or movie styles. This pattern makes it possible to apply **collaborative filtering techniques** to recommend movies based on similarities between users and their past ratings.
+
+---
+
+# 9. Project Timeline
 
 | Week | Activity |
 |-----|---------|
@@ -143,26 +226,25 @@ print(recommended_movies)
 | Week 4 | Model evaluation, insights extraction, visualization |
 | Week 5 | Documentation, final report preparation, submission |
 
+---
 
-
-## 10. Expected Outcomes
+# 10. Expected Outcomes
 - An organized analysis of movie ratings  
 - A working recommendation algorithm (proof-of-concept)  
-- Visualizations and insights into user preferences  
+- Insights into user preferences and movie popularity  
 - Comprehensive project documentation
 
 
 
-## 11. Conclusion
+# 11. Conclusion
 This project demonstrates the application of data analytics and machine learning to solve a real-world problem of personalized movie recommendations. By following a structured approach, the project will provide actionable insights and a functional recommendation model.
 
 
 
-## 12. References
-
-- Python Libraries: pandas, numpy, scikit-learn, matplotlib, seaborn  
-- Academic materials and lecture notes on Data Analytics & ML
-
+# 12. References
+- MovieLens Dataset – https://grouplens.org/datasets/movielens/  
+- Python Libraries: pandas, numpy, scikit-learn  
+- Academic materials and lecture notes on Data Analytics & Machine Learning
 
 
 
