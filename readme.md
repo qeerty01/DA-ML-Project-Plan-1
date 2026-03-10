@@ -3,9 +3,6 @@
 ## Course Name
 Data Analytics & Machine Learning
 
-## Subject
-Data Analytics & Machine Learning
-
 ## Project Title
 Movie Ratings & Recommendation System
 
