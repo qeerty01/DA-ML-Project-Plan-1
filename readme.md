@@ -70,6 +70,17 @@ from sklearn.model_selection import train_test_split
 ---
 
 ## Loading the Dataset
+```python
+ratings = pd.read_csv("ratings.dat", sep="::", engine="python",
+                      names=["user_id","movie_id","rating","timestamp"])
+
+movies = pd.read_csv("movies.dat", sep="::", engine="python",
+                     names=["movie_id","title","genres"])
+
+data = pd.merge(ratings, movies, on="movie_id")
+
+data.head()
+```
 
  ### remove duplicate rows
  ```python
@@ -184,8 +195,7 @@ movie_correlations = user_movie_matrix.corr()
 movie_correlations.head()
 ```
 ---
-
-# 8. Key Findings and Insights
+# Key Findings and Insights
 
 Based on the exploratory data analysis of the MovieLens 1M dataset, several important insights were identified.
 
@@ -211,31 +221,124 @@ A small subset of movies receives the majority of ratings. These movies are cons
 ### User–Movie Interaction Patterns
 The analysis shows that user preferences tend to cluster around certain genres or movie styles. This pattern makes it possible to apply **collaborative filtering techniques** to recommend movies based on similarities between users and their past ratings.
 
+# 8. Machine Learning
+
+## Import ML Libraries
+```python
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+import numpy as np
+
+from surprise import SVD, Dataset, Reader
+from surprise.model_selection import train_test_split
+from surprise import accuracy
+```
+## Model Training
+```python
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+
+pred_lr = lr.predict(X_test)
+rmse_lr = np.sqrt(mean_squared_error(y_test, pred_lr))
+
+print("Linear Regression RMSE:", rmse_lr)
+```
+## Random Forest Model
+```python
+rf = RandomForestRegressor(n_estimators=50, random_state=42)
+rf.fit(X_train, y_train)
+
+pred_rf = rf.predict(X_test)
+rmse_rf = np.sqrt(mean_squared_error(y_test, pred_rf))
+
+print("Random Forest RMSE:", rmse_rf)
+```
+## Prepare Data for SVD
+```python
+reader = Reader(rating_scale=(1, 5))
+
+data_surprise = Dataset.load_from_df(
+    data[['user_id', 'movie_id', 'rating']],
+    reader
+)
+
+trainset, testset = train_test_split(data_surprise, test_size=0.2)
+```
+## Train SVD Model
+```python
+svd = SVD()
+svd.fit(trainset)
+```
+## Evaluate SVD
+```python
+predictions = svd.test(testset)
+
+rmse_svd = accuracy.rmse(predictions)
+print("SVD RMSE:", rmse_svd)
+```
+
+## Movie Recommendation Function (SVD-based)
+```python
+def recommend_movies(user_id, top_n=10):
+    all_movies = data['movie_id'].unique()
+    predictions = []
+
+    for movie_id in all_movies:
+        pred = svd.predict(user_id, movie_id)
+        predictions.append((movie_id, pred.est))
+
+    recommendations = sorted(predictions, key=lambda x: x[1], reverse=True)[:top_n]
+    
+    return recommendations
+```
+
 ---
 
-# 9. Project Timeline
 
-| Week | Activity |
-|-----|---------|
-| Week 1 | Project planning and dataset selection |
-| Week 2 | Data cleaning, preprocessing, and exploratory analysis |
-| Week 3 | Building recommendation algorithms and ML models |
-| Week 4 | Model evaluation, insights extraction, visualization |
-| Week 5 | Documentation, final report preparation, submission |
+# 9. Comparison: EDA vs Machine Learning
+
+## EDA Insights
+- Reveals distribution of movie ratings in the MovieLens dataset  
+- Identifies most popular genres such as Drama, Comedy, and Action  
+- Helps understand user behavior patterns and movie popularity  
+- Provides initial insights for designing recommendation strategies  
 
 ---
 
-# 10. Expected Outcomes
-- An organized analysis of movie ratings  
-- A working recommendation algorithm (proof-of-concept)  
-- Insights into user preferences and movie popularity  
-- Comprehensive project documentation
+## ML Insights
+- Predicts user ratings using collaborative filtering and regression models  
+- Captures hidden relationships between users and movies  
+- Enables personalized movie recommendation systems (e.g., SVD-based model)  
+- Improves decision-making beyond simple descriptive analysis  
+
+---
+
+## Key Difference
+Exploratory Data Analysis is **descriptive and interpretative**, focusing on understanding patterns in data, while Machine Learning is **predictive**, aiming to forecast user preferences and generate recommendations.
+
+---
+
+## Conclusion
+EDA is essential for understanding the structure and behavior of the dataset, while Machine Learning transforms these insights into a functional recommendation system. In this project, both approaches complement each other: EDA helps to understand user and movie patterns, and ML enables personalized predictions and recommendations.
 
 
+---
 
-# 11. Conclusion
-This project demonstrates the application of data analytics and machine learning to solve a real-world problem of personalized movie recommendations. By following a structured approach, the project will provide actionable insights and a functional recommendation model.
 
+# 10. Conclusion
+
+This project compared Exploratory Data Analysis (EDA) and Machine Learning (ML) approaches using the MovieLens dataset.
+
+EDA provided a clear understanding of the data by identifying key patterns such as rating distribution, popular genres, and user activity. It helped explain user behavior and movie popularity in a simple and interpretable way.
+
+Machine Learning, on the other hand, enabled prediction of user ratings and demonstrated how models can be used to build recommendation systems. In particular, collaborative filtering techniques such as SVD showed strong performance in capturing user–item relationships and generating personalized recommendations.
+
+The comparison highlights that EDA and ML serve different but complementary purposes. EDA is essential for understanding and interpreting data, while ML is necessary for prediction and automation.
+
+In real-world applications, both approaches should be used together: EDA to explore and understand the data, and ML to build scalable and personalized recommendation systems.
+
+---
 
 
 # 12. References
