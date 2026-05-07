@@ -140,7 +140,7 @@ print("Test size:", len(X_test))
 ```
 ---
 
-# A
+# PART A
 
 # 7. Data Analysis Tasks
 
@@ -148,46 +148,68 @@ print("Test size:", len(X_test))
 ```python
 # rating distribution
 rating_distribution = data["rating"].value_counts().sort_index()
+
+plt.figure(figsize=(8,5))
+rating_distribution.plot(kind='bar')
+
+plt.title("Rating Distribution")
+plt.xlabel("Rating")
+plt.ylabel("Count")
+
+plt.show()
 ```
 <img width="721" height="465" alt="image" src="https://github.com/user-attachments/assets/6af7ec7c-5e26-4a72-8c5c-b25a36694581" />
 
 # top rated movies
 ```python
-top_rated_movies = movie_stats.sort_values(
-    by="average_rating",
+top_movies = data.groupby("title")["rating"].count().sort_values(
     ascending=False
 ).head(10)
 
-print(rating_distribution)
-print(top_rated_movies)
+plt.figure(figsize=(10,6))
+top_movies.plot(kind='barh')
+
+plt.title("Top 10 Most Rated Movies")
+plt.xlabel("Number of Ratings")
+
+plt.show()
 ```
 <img width="1202" height="547" alt="image" src="https://github.com/user-attachments/assets/48700401-9cfa-4702-976e-096a38385cda" />
 
 
 ## User Behavior Analysis
 ```python
-# average rating per user
-user_avg_rating = data.groupby("user_id")["rating"].mean()
+user_activity = data.groupby("user_id")["rating"].count()
 
-# most active users
-active_users = data.groupby("user_id")["rating"].count().sort_values(
-    ascending=False
-)
+plt.figure(figsize=(8,5))
+plt.hist(user_activity, bins=30)
 
-print(user_avg_rating.head())
-print(active_users.head(10))
+plt.title("User Activity Distribution")
+plt.xlabel("Number of Ratings")
+plt.ylabel("Number of Users")
+
+plt.show()
 ```
 <img width="704" height="470" alt="image" src="https://github.com/user-attachments/assets/b865efb9-c768-42c0-a130-9176503d6b5f" />
 
 ## Genre Analysis
 ```python
-genre_columns = genres_encoded.columns
+genres_encoded = data["genres"].str.get_dummies(sep="|")
 
-genre_popularity = data[genre_columns].sum().sort_values(
+genre_popularity = genres_encoded.sum().sort_values(
     ascending=False
 )
 
-print(genre_popularity.head(10))
+genre_popularity.head(10).plot(
+    kind='bar',
+    figsize=(10,5)
+)
+
+plt.title("Top 10 Movie Genres")
+plt.xlabel("Genre")
+plt.ylabel("Frequency")
+
+plt.show()
 ```
 <img width="876" height="528" alt="image" src="https://github.com/user-attachments/assets/cf29c2ef-7a43-416b-8a6c-e62bf3f04be0" />
 
@@ -200,10 +222,14 @@ user_movie_matrix = data.pivot_table(
     values="rating"
 )
 
-# movie correlations
-movie_correlations = user_movie_matrix.corr()
+sample_corr = user_movie_matrix.iloc[:20, :20].corr()
 
-movie_correlations.head()
+plt.figure(figsize=(10,8))
+sns.heatmap(sample_corr)
+
+plt.title("Movie Correlation Heatmap")
+
+plt.show()
 ```
 <img width="1052" height="952" alt="image" src="https://github.com/user-attachments/assets/49ff7283-66d3-4664-9c1e-3c07151be7c0" />
 
@@ -236,7 +262,7 @@ The analysis shows that user preferences tend to cluster around certain genres o
 
 ---
 
-# B
+# PART B
 # 8. Machine Learning
 
 ## Import ML Libraries
@@ -311,7 +337,7 @@ def recommend_movies(user_id, top_n=10):
 
 ---
 
-# C
+# PART C
 # 9. Comparison: EDA vs Machine Learning
 
 ## EDA Insights
