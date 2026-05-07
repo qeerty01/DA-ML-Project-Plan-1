@@ -140,14 +140,19 @@ print("Test size:", len(X_test))
 ```
 ---
 
+# A
+
 # 7. Data Analysis Tasks
 
 ## Descriptive Statistics
 ```python
 # rating distribution
 rating_distribution = data["rating"].value_counts().sort_index()
+```
+<img width="721" height="465" alt="image" src="https://github.com/user-attachments/assets/6af7ec7c-5e26-4a72-8c5c-b25a36694581" />
 
 # top rated movies
+```python
 top_rated_movies = movie_stats.sort_values(
     by="average_rating",
     ascending=False
@@ -156,6 +161,8 @@ top_rated_movies = movie_stats.sort_values(
 print(rating_distribution)
 print(top_rated_movies)
 ```
+<img width="1202" height="547" alt="image" src="https://github.com/user-attachments/assets/48700401-9cfa-4702-976e-096a38385cda" />
+
 
 ## User Behavior Analysis
 ```python
@@ -170,6 +177,8 @@ active_users = data.groupby("user_id")["rating"].count().sort_values(
 print(user_avg_rating.head())
 print(active_users.head(10))
 ```
+<img width="704" height="470" alt="image" src="https://github.com/user-attachments/assets/b865efb9-c768-42c0-a130-9176503d6b5f" />
+
 ## Genre Analysis
 ```python
 genre_columns = genres_encoded.columns
@@ -180,6 +189,8 @@ genre_popularity = data[genre_columns].sum().sort_values(
 
 print(genre_popularity.head(10))
 ```
+<img width="876" height="528" alt="image" src="https://github.com/user-attachments/assets/cf29c2ef-7a43-416b-8a6c-e62bf3f04be0" />
+
 ## Correlation Analysis
 ```python
 # user-movie matrix
@@ -194,6 +205,8 @@ movie_correlations = user_movie_matrix.corr()
 
 movie_correlations.head()
 ```
+<img width="1052" height="952" alt="image" src="https://github.com/user-attachments/assets/49ff7283-66d3-4664-9c1e-3c07151be7c0" />
+
 ---
 # Key Findings and Insights
 
@@ -221,6 +234,9 @@ A small subset of movies receives the majority of ratings. These movies are cons
 ### User–Movie Interaction Patterns
 The analysis shows that user preferences tend to cluster around certain genres or movie styles. This pattern makes it possible to apply **collaborative filtering techniques** to recommend movies based on similarities between users and their past ratings.
 
+---
+
+# B
 # 8. Machine Learning
 
 ## Import ML Libraries
@@ -295,7 +311,7 @@ def recommend_movies(user_id, top_n=10):
 
 ---
 
-
+# C
 # 9. Comparison: EDA vs Machine Learning
 
 ## EDA Insights
